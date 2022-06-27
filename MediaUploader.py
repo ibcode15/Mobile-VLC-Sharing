@@ -11,7 +11,7 @@ import src.Utilities as Utils
 global Log
 
 
-def Upload(VLC_IP:int,file: File.File):
+def Upload(VLC_IP:str,file: File.File):
     req = post(f"http://{VLC_IP}/upload.json",
                headers={
                    "Host": VLC_IP,
