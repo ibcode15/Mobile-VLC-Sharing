@@ -34,12 +34,10 @@ class File:
     Mime: str
     Path: str = ""
     Data: _io.TextIOWrapper = ""
-    #Encoder: MultipartEncoder = ""
-    #Callback = ""
     @staticmethod
     def Boundary() -> str:
         return f"----WebKitFormBoundary{''.join(random.sample(string.ascii_letters + string.digits, 16))}" 
-    def __post_init__(self):
+    def SetupUpload(self) -> tuple[bool, str]:
         if self.Mode == 0:
             self.Path = self.Name
             self.Name = os.path.basename(self.Path)
@@ -49,8 +47,11 @@ class File:
                 })
             self.Callback = Progress.create_callback(self.Path,self.Encoder)
             self.Monitor = MultipartEncoderMonitor(self.Encoder, self.Callback)
-        else:
-            print("This mode is not supported yet")
+            return (True,"")
+        elif self.Mode == 1:
+            return (False, "Mode 1 aka 'Url mode' has not been implemented yet and so will skip the upload of {self.Name}")
+        return (False, "Could not find mode {self.Mode} and so will skip the upload of {self.Name}")
+        
 
 
 
@@ -58,33 +59,38 @@ class File:
 def ProcessMediaFileInput(Log: Utilities.Logging,*MediaFiles: tuple) -> list[File]:
     Temp_MediaFiles = []
     if MediaFiles == ():
-        Log.Add(f"Finding Media Files in {os.curdir}")
+        Log.Add(f"Finding Media Files in {os.curdir}.")
         
         GetFiles = [is_media(os.path.join(os.curdir,path)) for path in os.listdir(os.curdir) if os.path.isfile(os.path.join(os.curdir,path))]
         if GetFiles != []:
-            Log.Add(f"Found {len(GetFiles)} Media files in {os.curdir}")
             Temp_MediaFiles += [File(*i) for i in GetFiles if i]
+            Log.Add(f"Found {len(Temp_MediaFiles)} Media files in {os.curdir}.")
         else:
-            Log.Add(f"Found media files 0 in {os.curdir}")
+            Log.Add(f"Found 0 Media Files in {os.curdir}")
             pass
     else:
         for file in MediaFiles:
             if os.path.isdir(file):
                 dir_ = file
-                Log.Add(f"Finding Media Files in {dir_}")
+                Log.Add(f"Finding Media Files in {dir_}.")
                 GetFiles = [is_media(os.path.join(dir_,path)) for path in os.listdir(dir_) if os.path.isfile(os.path.join(dir_,path))]
                 if GetFiles != []:
                     Temp_MediaFiles += [File(*i) for i in GetFiles if i]
-                    Log.Add(f"Found {len(GetFiles)} Media files in {dir_}")
+                    Log.Add(f"Found {len(Temp_MediaFiles)} Media files in {dir_}.")
                 else:
-                    Log.Add(f"Found 0 media files in {dir_}")
+                    Log.Add(f"Found 0 media files in {dir_}.")
             elif os.path.isfile(file):
+                Log.Add(f'Checking to see if "{file}" is a Media File.')
                 file = is_media(file)
-                if file:
+                
+                if file != False:
+                    Log.Add(f'"{file[0]}" is a Media File.')
                     Temp_MediaFiles.append(File(*file))
+                else:
+                    Log.Add(f'"{file[0]}" is a "{file[2]}" file which is not a Media File.')
             #elif is_url(file):
             #    Temp_MediaFiles.append(file)
             else:
-                pass
+                Log.Add(f'"{file}" could not be found.')
     return Temp_MediaFiles
                 
