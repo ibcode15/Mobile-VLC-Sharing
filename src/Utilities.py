@@ -1,54 +1,39 @@
 
-import http.client
-from os import system
+import requests
 from sys import platform
+import os
 
-
-#def InitNaming(Name: str,VLC_IP: str) -> None:
-#    global loggingName
-#    global IP
-#    loggingName = Name
-#    IP = VLC_IP
-
-#def Successful(code: int, file: str):
-#    
-#    if code == 200:
-#        return f"{loggingName} Successfully Uploaded {file} to {IP} ({code}: {http.client.responses[code]})"
-#    return f"{loggingName} Failed to Upload {file} to {IP} ({code}: {http.client.responses[code]})"
-#def Display(files: list[tuple]) -> None:
-#    print("\n".join([Successful(*i) for i in files]))
-#def clear() -> str:
-#    if platform == "linux" or platform == "darwin":
-#        system("clear")
-#    elif platform == "win32":
-#        system("cls")
-#    else:
-#        print("cannot find system")
+def GetFileName(name: str) -> str: return os.path.basename(name).split('.')[0]
 
 class Logging:
     def __init__(self,Name: str, IP: str):
         self.Log = []
         self.Name = Name
         self.IP = IP
-    @staticmethod
-    def Clear() -> str:
-        if platform == "linux" or platform == "darwin":
-            system("clear")
-        elif platform == "win32":
-            system("cls")
-        else:
-            print("cannot find system")
+        self.ClearCommand = {
+            "linux": "clear",
+            "darwin":"clear",
+            "win32":"cls"
+            }.get(platform,"cls")
     def Update(self):
+        os.system(self.ClearCommand)
         print("\n".join(self.Log))
-    def AddUploadResult(self, status_code: str,Filename: str):
-        if status_code == 200:
-            self.Log.append(f"[{self.Name}] Successfully Uploaded {Filename} to {self.IP} ({status_code}: {http.client.responses[status_code]})")
+    def ExitingDueTo(self,MSG,Exitcode=1):
+        self.Log.append(f"[{self.Name}] Exiting program due to {MSG}.")
+        self.Update()
+        exit(Exitcode)
+    def ExitingError(self,MSG: str,Exitcode=1):
+        self.Log.append(f"[{self.Name}] Error: Exiting program due to {MSG}.")
+        self.Update()
+        exit(Exitcode)
+        
+    def AddUploadResult(self, Response: requests.Response ,Filename: str):
+        if Response.status_code == 200:
+            self.Log.append(f'[{self.Name}] Successfully Uploaded "{Filename}" to {self.IP}. ({Response.status_code}: {Response.reason})')
         else:
-            self.Log.append(f"[{self.Name}] Failed to Upload {Filename} to {self.IP} ({status_code}: {http.client.responses[status_code]})")
-        self.Clear()
+            self.Log.append(f'[{self.Name}] Failed to Upload "{Filename}" to {self.IP}. ({Response.status_code}: {Response.reason})')
         self.Update()
     def Add(self,text):
         self.Log.append(f"[{self.Name}] {text}")
-        self.Clear()
         self.Update()
         
